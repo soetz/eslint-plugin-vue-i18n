@@ -178,6 +178,22 @@ For SFC.
 
 </eslint-code-block>
 
+## :gear: Options
+
+```json
+{
+  "@intlify/vue-i18n/no-missing-keys": [
+    "error",
+    {
+      "ignoreCallerPatterns": ["\\.spec\\.ts$", "\\.spec\\.js$"],
+      // or [/\.spec\.ts$/, /\.spec\.js$/]
+    }
+  ]
+}
+```
+
+- `ignoreCallerPatterns`: specify an array of regular expressions to ignore files with a name that matches. Default empty.
+
 ## :couple: Related Rules
 
 - [@intlify/vue-i18n/no-missing-keys-in-other-locales](./no-missing-keys-in-other-locales.md)
@@ -186,6 +202,8 @@ For SFC.
 ## :rocket: Version
 
 This rule was introduced in `@intlify/eslint-plugin-vue-i18n` v0.1.0
+
+The `ignoreCallerPatterns` option was added in vX.X.X (yet unreleased)
 
 ## :mag: Implementation
 
