@@ -228,6 +228,18 @@ tester.run('no-missing-keys', rule as never, {
               './tests/fixtures/no-missing-keys/complex-locales/locales/*.json'
           }
         }
+      },
+      {
+        // string ignore option
+        filename: 'test.spec.ts',
+        code: `$t('missing')`,
+        options: [{ ignoreCallerPatterns: ['\\.vue$', '\\.ts$'] }]
+      },
+      {
+        // regexp ignore option
+        filename: 'test.ts',
+        code: `$t('missing')`,
+        options: [{ ignoreCallerPatterns: [/^test/, /^something-else/] }]
       }
     ]
   ),
@@ -296,6 +308,20 @@ tester.run('no-missing-keys', rule as never, {
         errors: [
           `'messages.missing' does not exist in localization message resources`
         ]
+      },
+      {
+        // string ignore option
+        filename: 'test.spec.ts',
+        code: `$t('missing')`,
+        options: [{ ignoreCallerPatterns: ['(?<!\\.spec)\\.ts$', '\\.js$'] }],
+        errors: [`'missing' does not exist in localization message resources`]
+      },
+      {
+        // regexp ignore option
+        filename: 'test.ts',
+        code: `$t('missing')`,
+        options: [{ ignoreCallerPatterns: [/^not-test/, /^something-else/] }],
+        errors: [`'missing' does not exist in localization message resources`]
       }
     ],
     [

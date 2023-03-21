@@ -12,37 +12,67 @@ import type { AST as VAST } from 'vue-eslint-parser'
 import type { RuleContext, RuleListener } from '../types'
 import { createRule } from '../utils/rule'
 
+type Config = {
+  ignoreCallerPatterns: Array<RegExp>
+}
+
+function shouldIgnore(filename: string, ignoreCallerPatterns: Array<RegExp>) {
+  for (const ignorePattern of ignoreCallerPatterns) {
+    if (ignorePattern.test(filename)) {
+      return true
+    }
+  }
+  return false
+}
+
 function create(context: RuleContext): RuleListener {
+  const options = (context.options && context.options[0]) || {}
+  const config: Config = { ignoreCallerPatterns: [] }
+  if (options.ignoreCallerPatterns) {
+    config.ignoreCallerPatterns = options.ignoreCallerPatterns.map(
+      (ignoreCallerPattern: string | RegExp) => RegExp(ignoreCallerPattern, 'u')
+    )
+  }
+
   return compositingVisitors(
     defineTemplateBodyVisitor(context, {
       "VAttribute[directive=true][key.name='t']"(node: VAST.VDirective) {
-        checkDirective(context, node)
+        checkDirective(context, node, config)
       },
 
       "VAttribute[directive=true][key.name.name='t']"(node: VAST.VDirective) {
-        checkDirective(context, node)
+        checkDirective(context, node, config)
       },
 
       ["VElement:matches([name=i18n], [name=i18n-t]) > VStartTag > VAttribute[key.name='path']," +
         "VElement[name=i18n-t] > VStartTag > VAttribute[key.name='keypath']"](
         node: VAST.VAttribute
       ) {
-        checkComponent(context, node)
+        checkComponent(context, node, config)
       },
 
       CallExpression(node: VAST.ESLintCallExpression) {
-        checkCallExpression(context, node)
+        checkCallExpression(context, node, config)
       }
     }),
     {
       CallExpression(node: VAST.ESLintCallExpression) {
-        checkCallExpression(context, node)
+        checkCallExpression(context, node, config)
       }
     }
   )
 }
 
-function checkDirective(context: RuleContext, node: VAST.VDirective) {
+function checkDirective(
+  context: RuleContext,
+  node: VAST.VDirective,
+  config: Config
+) {
+  const filename = context.getFilename()
+  if (shouldIgnore(filename, config.ignoreCallerPatterns)) {
+    return
+  }
+
   const localeMessages = getLocaleMessages(context)
   if (localeMessages.isEmpty()) {
     return
@@ -68,7 +98,16 @@ function checkDirective(context: RuleContext, node: VAST.VDirective) {
   }
 }
 
-function checkComponent(context: RuleContext, node: VAST.VAttribute) {
+function checkComponent(
+  context: RuleContext,
+  node: VAST.VAttribute,
+  config: Config
+) {
+  const filename = context.getFilename()
+  if (shouldIgnore(filename, config.ignoreCallerPatterns)) {
+    return
+  }
+
   const localeMessages = getLocaleMessages(context)
   if (localeMessages.isEmpty()) {
     return
@@ -92,8 +131,15 @@ function checkComponent(context: RuleContext, node: VAST.VAttribute) {
 
 function checkCallExpression(
   context: RuleContext,
-  node: VAST.ESLintCallExpression
+  node: VAST.ESLintCallExpression,
+  config: Config
 ) {
+  const filename = context.getFilename()
+  console.log(filename)
+  if (shouldIgnore(filename, config.ignoreCallerPatterns)) {
+    return
+  }
+
   const funcName =
     (node.callee.type === 'MemberExpression' &&
       node.callee.property.type === 'Identifier' &&
@@ -142,7 +188,12 @@ export = createRule({
       recommended: true
     },
     fixable: null,
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: { ignoreCallerPatterns: { type: 'array' } }
+      }
+    ],
     messages: {
       missing: "'{{path}}' does not exist in localization message resources"
     }
