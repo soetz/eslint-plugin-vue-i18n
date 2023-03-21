@@ -296,13 +296,6 @@ tester.run('no-missing-keys', rule as never, {
         ]
       },
       {
-        // nested missing
-        code: `$t('messages.missing')`,
-        errors: [
-          `'messages.missing' does not exist in localization message resources`
-        ]
-      },
-      {
         parser: require.resolve('espree'),
         code: `$t('messages.missing')`,
         errors: [
